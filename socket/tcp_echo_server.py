@@ -2,13 +2,20 @@ import socket
 from sys import argv
 import time 
 
+# i socket servono in generale per far comunicare macchine diverse quindi applicazioni diverse
+
 localIP     = argv[1]
 localPORT   = int(argv[2])
 
+# Solo per definire  il tipo di socket
 TCPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
+
+# operazione di bind
 TCPServerSocket.bind((localIP, localPORT))
 
 print('TCP Server UP ({},{}), waiting for connections ...'.format(localIP, localPORT))
+
+# mi metto in ascolto
 TCPServerSocket.listen()
 
 # Accetto una nuova connessione
@@ -32,3 +39,4 @@ conn.close()
 # Chiudo la connessione in essere
 
 TCPServerSocket.close()
+
