@@ -18,7 +18,7 @@ def sendToUser(daddr, data):
     global mutex
 
     mutex.acquire()
-    conn = activeConnections[daddr]:
+    conn = activeConnections[daddr]
     conn.sendall(data)
     mutex.release()
 
