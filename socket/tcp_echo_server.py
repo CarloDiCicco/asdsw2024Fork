@@ -19,24 +19,25 @@ print('TCP Server UP ({},{}), waiting for connections ...'.format(localIP, local
 TCPServerSocket.listen()
 
 # Accetto una nuova connessione
+# addr è puntatore a una tupla con ip e porta del client e conn è il socket per comunicare con il client
 conn, addr = TCPServerSocket.accept()
 
 print('Client: {}'.format(addr))
 
 time.sleep(1)
 while True:
-    data = conn.recv(1024)
+    data = conn.recv(1024) # ricevo i dati dal client, massimo 1024 bit alla volta
 
     if not data:
         break
 
-    #print('{}: echo message: {}'.format(addr, data[:-1].decode('utf-8')))
+    #print('{}: echo message: {}'.format(addr, data[:-1].decode('utf-8'))) questo lo stampa il server
     print('{}: echo message: {}'.format(addr, data))
     
-    conn.sendall(data)
+    conn.sendall(data) # invio i dati al client
 
 conn.close()
-# Chiudo la connessione in essere
+# Chiudo la connessione in essere solo chiudendo il terminale, non ci sono comandi specifici per la chiusura
 
 TCPServerSocket.close()
 
