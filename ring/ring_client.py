@@ -8,6 +8,9 @@ import socket
 import logging
 import json
 
+# Questo script va avviato per inserire un nuovo nodo nella rete ring, passando come argomenti
+# l'indirizzo IP e la porta dell'oracolo, l'indirizzo IP e la porta del nodo che si vuole inserire
+
 def sendDataToRing(clientSocket, nextNode, idSorgente, idDestinazione, mess):
     # PROTOTIPO MESSAGGIO: [DATA] JSON MESSAGGIO
     messaggio = {}
@@ -147,26 +150,32 @@ if __name__ == '__main__':
     oraclePORT   = int(argv[2])
     clientIP     = argv[3]
     clientPORT   = int(argv[4])
-
+    
+    # Configurazione del logger, 
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.ERROR)
-
+    
+    # creo un nuovo socket UDP
     clientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     clientSocket.bind( (clientIP, clientPORT) )
 
     logging.info('CLIENT UP AND RUNNING')
-
+    
+    # dizionari che tengono traccia dei nodi
     currNode = {}
     nextNode = {}
 
     currNode['addr'] = clientIP
     currNode['port'] = str(clientPORT)
-
+    
+    # adesione del nuovo nodo alla rete ring
     join(clientSocket, currNode, nextNode, oracleIP, oraclePORT)
     logging.debug('NEW CONFIGURATION:\n\t{}\n\t{}'.format(currNode, nextNode))
-
+    
+    # Creazione della classe prompt
     prompt = RingPrompt()
     prompt.conf(clientSocket, nextNode, currNode['id'])
-
+    
+    # Avvio un nuovo thread che esegue la funzione managePrompt con prompt come argomento.
     Thread(target=managePrompt, args=(prompt,)).start()
 
     # Gestione comunicazione Ring

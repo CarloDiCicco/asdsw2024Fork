@@ -143,12 +143,14 @@ if __name__ == '__main__':
     listOfNodes = []
 
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.DEBUG)
-
+    
+    # creo il socket per la comunicazione con i nodi
     oracleSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     oracleSocket.bind( (IP, PORT) )
 
     logging.info("ORACLE UP AND RUNNING!")
-
+    
+    # ciclo infinito per ricevere i messaggi dai nodi
     while True:
         mess, addr = oracleSocket.recvfrom(bufferSize)
         dmess = mess.decode('utf-8')
