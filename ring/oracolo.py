@@ -38,6 +38,13 @@ def decodeMessage(addr, mess):
         command = result.group(1)
         logging.debug('COMMAND: {}'.format(command))
 
+        '''
+        if command == 'JOIN':
+            decodeJoin(addr, mess)
+        else if command == 'LEAVE':
+            decodeLEAVE(addr, mess)
+        '''
+
         try:
             # viene associato ad action una di questw due funzioni a seconda del comando ricevuto dalla funzione
             action = {
