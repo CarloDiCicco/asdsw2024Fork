@@ -11,6 +11,7 @@ import json
 # Questo script va avviato per inserire un nuovo nodo nella rete ring, passando come argomenti
 # l'indirizzo IP e la porta dell'oracolo, l'indirizzo IP e la porta del nodo che si vuole inserire
 
+# funzioen che genera il mio messaggio  elo passa all'anello 
 def sendDataToRing(clientSocket, nextNode, idSorgente, idDestinazione, mess):
     # PROTOTIPO MESSAGGIO: [DATA] JSON MESSAGGIO
     messaggio = {}
@@ -26,7 +27,7 @@ def sendDataToRing(clientSocket, nextNode, idSorgente, idDestinazione, mess):
     nextNodePort    = int(nextNode['port'])
     clientSocket.sendto(stringaMessaggio.encode(), (nextNodeAddress, nextNodePort))
 
-
+# eredita la classe cmd, per l'uso dei promt 
 class RingPrompt(Cmd):
     prompt = ''
     intro  = 'Benvenuto nel ring. Usa ? per accedere all\'help'
@@ -94,40 +95,44 @@ def leave(clientSocket, currNode, oracleIP, oraclePort):
 def sendMessage(clientSocket, nextNode, message):
     pass
 
+# l'oracolo manda il messaggio di update di configuration al nodo con le informazioni in json
 def updateConfiguration(clientSocket, currNode, nextNode, mess, prompt):
     logging.debug('UPDATE CONFIGURATION')
 
-    result = re.search('(\{[a-zA-Z0-9\"\'\:\.\,\{\} ]*\})', mess)
+    result = re.search('(\{[a-zA-Z0-9\"\'\:\.\,\{\} ]*\})', mess) # cerco il json nel messaggio
     if bool(result):
-        configuration = json.loads(result.group(1))
+        configuration = json.loads(result.group(1)) # trasformo il json in dizionario python
         logging.debug('NEW CONFIGURATION: {}'.format(configuration))
+        # prendo tutte le informazioni dal dizionario
         currNode['id'] = configuration['id']
         nextNode['id'] = configuration['nextNode']['id']
         nextNode['addr'] = configuration['nextNode']['addr']
         nextNode['port'] = configuration['nextNode']['port']
-        prompt.conf(clientSocket, nextNode, currNode['id'])
-    
+        prompt.conf(clientSocket, nextNode, currNode['id']) # aggiorno la configurazione del prompt
+
+# se mi arriva un messaggio dati viene chiamata questa funzione    
 def decodeData(clientSocket, currNode, nextNode, mess, prompt):
     logging.debug('DATA MESSAGE')
-    result = re.search('(\{[a-zA-Z0-9\"\'\:\.\,\{\} ]*\})', mess)
+    result = re.search('(\{[a-zA-Z0-9\"\'\:\.\,\{\} ]*\})', mess) # cerco il json nel messaggio
     if bool(result):
-        message = json.loads(result.group(1))
+        message = json.loads(result.group(1)) # trasformo il json in dizionario python
         logging.debug('NEW MESSAGE: {}'.format(message))
-        idSorgente = message['idSorgente']
+        # prendo tutte le informazioni dal dizionario
+        idSorgente = message['idSorgente'] 
         idDestinazione = message['idDestinazione']
         payload = message['payload']
-        if idDestinazione == currNode['id']:
+        if idDestinazione == currNode['id']: # allora sono io il destinatario e stampo il messsaggio
             prompt.echo_message('{}->{}: {}'.format(idSorgente, idDestinazione, payload))
-        elif idSorgente == currNode['id']:
-            logging.debug('DROPPING MESSAGE')
-        else:
+        elif idSorgente == currNode['id']: # allora sono io il mittente e non faccio nulla
+            logging.debug('DROPPING MESSAGE') 
+        else: # altrimenti devo inoltrare il messaggio al nodo successivo 
             addr = nextNode['addr']
             port = int(nextNode['port'])
             clientSocket.sendto(mess.encode(), (addr, port))
 
 
 def receiveMessage(clientSocket, currNode, nextNode, prompt):
-    mess, addr = clientSocket.recvfrom(1024)
+    mess, addr = clientSocket.recvfrom(1024) # si blocca in attesa del messaggio
     mess = mess.decode('utf-8')
     logging.debug('MESSAGE FROM {}:{} = {}'.format(addr[0], addr[1], mess))
 
@@ -136,7 +141,7 @@ def receiveMessage(clientSocket, currNode, nextNode, prompt):
     result = re.search('^\[([A-Z]*)\]', mess)
     if bool(result):
         command = result.group(1)
-        if command in {'CONF', 'DATA'}:
+        if command in {'CONF', 'DATA'}: # il messaggioi pure essere di configurazione o di dati e aseconda di questo chiamo una funzione diversa 
             action = {
                 'CONF' : lambda param1, param2, param3, param4, param5 : updateConfiguration(param1, param2, param3, param4, param5),
                 'DATA' : lambda param1, param2, param3, param4, param5 : decodeData(param1, param2, param3, param4, param5)
@@ -160,7 +165,7 @@ if __name__ == '__main__':
 
     logging.info('CLIENT UP AND RUNNING')
     
-    # dizionari che tengono traccia dei nodi
+    # dizionari che tengono traccia dei nodi il corrente e il successivo
     currNode = {}
     nextNode = {}
 
@@ -178,6 +183,6 @@ if __name__ == '__main__':
     # Avvio un nuovo thread che esegue la funzione managePrompt con prompt come argomento.
     Thread(target=managePrompt, args=(prompt,)).start()
 
-    # Gestione comunicazione Ring
+    # Gestione comunicazione Ring - Oracle, Ring - Ring
     while True:
         receiveMessage(clientSocket, currNode, nextNode, prompt)
