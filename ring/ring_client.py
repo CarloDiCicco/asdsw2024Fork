@@ -39,16 +39,16 @@ class RingPrompt(Cmd):
 
         self.prompt = '[{}-->{}]>'.format(idSorgente, nextNode['id'])
 
-    def do_exit(self, inp):
+    def do_exit(self, inp): # se l'utente scrive exit esce dal prompt, va implementato? 
         print('Ciao, alla prossima!')
         return True
 
     def do_send(self, inp):
         #Prototipo messaggio: send [id] <MESSAGGIO>
-        result = re.search('^\[([0-9]*)\]', inp)
+        result = re.search('^\[([0-9]*)\]', inp) # cerca id del destinatario
         if bool(result):
-            idDestinazione = result.group(1)
-        result = re.search('<([a-zA-Z0-9\,\.\;\'\"\!\?<> ]*)>', inp)
+            idDestinazione = result.group(1) # prende la prima occorrenza
+        result = re.search('<([a-zA-Z0-9\,\.\;\'\"\!\?<> ]*)>', inp) # cerca il messaggio
         if bool(result):
             mess = result.group(1)
         logging.debug('INVIO MESSAGGIO:\nDestinatario: {}\nMessaggio: {}'.format(idDestinazione, mess))
@@ -61,24 +61,24 @@ class RingPrompt(Cmd):
     #def do_help(self, inp):
     #    print("Help non ancora implementato")
 
-    def do_shell(self, inp):
+    def do_shell(self, inp): # se l'utente scrive shell esegue il comando shell
         print(os.popen(inp).read())
 
 def managePrompt(prompt):
     prompt.cmdloop()
 
 def join(clientSocket, currNode, nextNode, oracleIP, oraclePORT):
-    mess = '[JOIN] {}'.format(json.dumps(currNode))
-    logging.debug('JOIN MESSAGE: {}'.format(mess))
-    clientSocket.sendto(mess.encode(), (oracleIP, oraclePORT))
-    mess, addr = clientSocket.recvfrom(1024)
-    mess = mess.decode('utf-8')
+    mess = '[JOIN] {}'.format(json.dumps(currNode)) # creo il messaggio di join
+    logging.debug('JOIN MESSAGE: {}'.format(mess)) # stampo il messaggio di join
+    clientSocket.sendto(mess.encode(), (oracleIP, oraclePORT)) # invio il messaggio di join all'oracolo
+    mess = clientSocket.recvfrom(1024) # mi blocco in attesa di una risposta che contiene la configurazione nuova del ring che il nodo deve seguire, il messaggio è un dizionario 
+    mess = mess.decode('utf-8') # decodifico il messaggio 
     logging.debug('RESPONSE: {}'.format(mess))
 	
-    result = re.search('(\{[a-zA-Z0-9\"\'\:\.\,\{\} ]*\})', mess)
+    result = re.search('(\{[a-zA-Z0-9\"\'\:\.\,\{\} ]*\})', mess) # cerca le rispondenza in json 
     if bool(result):
         logging.debug('RE GROUP(1) {}'.format(result.group(1)))	
-        action = json.loads(result.group(1))
+        action = json.loads(result.group(1)) # prende la prima occorenza di result 
         currNode['id'] = action['id']
         nextNode['id'] = action['nextNode']['id']
         nextNode['addr'] = action['nextNode']['addr']
@@ -108,14 +108,14 @@ def updateConfiguration(clientSocket, currNode, nextNode, mess, prompt):
         nextNode['id'] = configuration['nextNode']['id']
         nextNode['addr'] = configuration['nextNode']['addr']
         nextNode['port'] = configuration['nextNode']['port']
-        prompt.conf(clientSocket, nextNode, currNode['id']) # aggiorno la configurazione del prompt
+        prompt.conf(clientSocket, nextNode, currNode['id']) # aggiorno la configurazione del prompt con le nuove informazioni
 
 # se mi arriva un messaggio dati viene chiamata questa funzione    
 def decodeData(clientSocket, currNode, nextNode, mess, prompt):
     logging.debug('DATA MESSAGE')
     result = re.search('(\{[a-zA-Z0-9\"\'\:\.\,\{\} ]*\})', mess) # cerco il json nel messaggio
     if bool(result):
-        message = json.loads(result.group(1)) # trasformo il json in dizionario python
+        message = json.loads(result.group(1)) # trasformo la prima occorrenza il json in dizionario python
         logging.debug('NEW MESSAGE: {}'.format(message))
         # prendo tutte le informazioni dal dizionario
         idSorgente = message['idSorgente'] 
@@ -138,9 +138,9 @@ def receiveMessage(clientSocket, currNode, nextNode, prompt):
 
     action = False
 
-    result = re.search('^\[([A-Z]*)\]', mess)
+    result = re.search('^\[([A-Z]*)\]', mess) # cerco il comando nel messaggio come [CONF] o [DATA]
     if bool(result):
-        command = result.group(1)
+        command = result.group(1) # prendo la prima occorrenza 
         if command in {'CONF', 'DATA'}: # il messaggioi pure essere di configurazione o di dati e aseconda di questo chiamo una funzione diversa 
             action = {
                 'CONF' : lambda param1, param2, param3, param4, param5 : updateConfiguration(param1, param2, param3, param4, param5),
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     join(clientSocket, currNode, nextNode, oracleIP, oraclePORT)
     logging.debug('NEW CONFIGURATION:\n\t{}\n\t{}'.format(currNode, nextNode))
     
-    # Creazione della classe prompt
+    # Creazione della classe prompt è una shell interattiva in cui l'utente può inviare e ricevere messaggi dal ring
     prompt = RingPrompt()
     prompt.conf(clientSocket, nextNode, currNode['id'])
     

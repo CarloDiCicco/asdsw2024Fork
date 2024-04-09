@@ -6,12 +6,12 @@ import json
 
 # l'oracolo fa management della struttura ad anello
 
-# decodifica il messaggio di join ricevuto, questa funzione viene chiamata nella funzione decodemessage
+# decodifica il messaggio di join ricevuto, questa funzione viene chiamata nella funzione decodeMessage
 def decodeJoin(addr, mess):
-    result = re.search('(\{[a-zA-Z0-9\"\'\:\.\, ]*\})' , mess)
+    result = re.search('(\{[a-zA-Z0-9\"\'\:\.\, ]*\})' , mess) # sempre in mess cerco un pattern json
     if bool(result):
         logging.debug('RE GROUP(1) {}'.format(result.group(1)))
-        action = json.loads(result.group(1))
+        action = json.loads(result.group(1)) # trasformo la prima occorenza in dizionario python che contiene le informazioni del nodo che sta facendo il join come porta e indirizzo  
     else:
         action = {}
     
@@ -19,12 +19,12 @@ def decodeJoin(addr, mess):
 
     return action
 
-# decodifica il messaggio di leave ricevuto, questa funzione viene chiamata nella funzione decodemessage
+# decodifica il messaggio di leave ricevuto, questa funzione viene chiamata nella funzione decodeMessage
 def decodeLeave(addr, mess):
-    result = re.search('(\{[a-zA-Z0-9\"\'\:\.\, ]*\})' , mess)
+    result = re.search('(\{[a-zA-Z0-9\"\'\:\.\, ]*\})' , mess) # sempre in mess cerco un pattern json
     if bool(result):
         logging.debug('RE GROUP(1) {}'.format(result.group(1)))
-        action = json.loads(result.group(1))
+        action = json.loads(result.group(1)) # trasformo la prima occorenza in dizionario python che contiene le informazioni del nodo che sta facendo il leave come porta e indirizzo
     else:
         action = {}
     
@@ -33,9 +33,9 @@ def decodeLeave(addr, mess):
     return action
 
 def decodeMessage(addr, mess):
-    result = re.search('^\[([A-Z]*)\]' , mess) # ricnosce una stringa di lettere maiuscole
+    result = re.search('^\[([A-Z]*)\]' , mess) # riconosce una stringa di lettere maiuscole tra parentsi quadre 
     if bool(result):
-        command = result.group(1)
+        command = result.group(1) # ci potrebbero stare più corrispondenze, così prendo la prima
         logging.debug('COMMAND: {}'.format(command))
 
         '''
@@ -46,7 +46,8 @@ def decodeMessage(addr, mess):
         '''
 
         try:
-            # viene associato ad action una di questw due funzioni a seconda del comando ricevuto dalla funzione
+            # viene associato ad action una di queste due funzioni a seconda del comando ricevuto dalla funzione decodeMessage, 
+            # oltre a effettuare l'associazione vengono passati i due parametri delle funzioni possibili
             action = {
                 'JOIN'  : lambda param1,param2 : decodeJoin(param1, param2),
                 'LEAVE' : lambda param1,param2 : decodeLeave(param1, param2)
@@ -66,14 +67,14 @@ def decodeMessage(addr, mess):
 # 
 def updateRingJoin(action, listOfNodes):
     logging.debug('RING JOIN UPDATE')
-    node = {} # inizializza un nuovo dizionario vuoto che sarà utilizzato per memorizzare le informazioni del nuovo nodo.
+    node = {} # inizializza un nuovo dizionario vuoto che sarà utilizzato per memorizzare le informazioni del nuovo nodo
 
 
     id_ = 1 # inizializzo l'id del nuovo nodo a 1
     idList = [int(eNode['id']) for eNode in listOfNodes] # lista di id dei nodi presenti nell'anello
 
     # Il ciclo for successivo cerca il primo ID non utilizzato nella lista di nodi e lo assegna al nuovo nodo.
-    for i in range(1, len(listOfNodes)+2):
+    for i in range(1, len(listOfNodes)+2): # metto +2 (potevo mettere anche +1) perche se ho n nodi, il nuovo nodo avrà id n+1esimo
         if i not in idList:
             id_ = i
             break
@@ -86,6 +87,7 @@ def updateRingJoin(action, listOfNodes):
     # Verifica esistenza nodo nella lista di nodi
     nodes = [(eNode['addr'], eNode['port']) for eNode in listOfNodes]
 
+    # controllo se ip e porta sono gia presenti nel ring, se non ci stanno aggiungo il nodo senno non lo aggiungo e ritorno false
     if (node['addr'], node['port']) not in nodes:
         logging.debug('OK:  Adding node {}:{}'.format(node['addr'], node['port']))
         listOfNodes.append(node) # aggiungo il nodo alla lista in coda 
@@ -98,7 +100,7 @@ def updateRingJoin(action, listOfNodes):
 def updateRingLeave(action, listOfNodes):
     logging.debug('RING LEAVE UPDATE')
 
-    # list comprension per ottenre il dizioanrio di nodi con chiave id
+    # list comprension per ottenre il dizionario di nodi con chiave id e con valore il nodo stesso con tutte le sue informazioni
     dictOfNodes = {eNode['id'] : eNode for eNode in listOfNodes}
     
     # Verifica esistenza nodo che sta facendo il leave nella lista di nodi, ovviamente se non esiste esco
@@ -106,11 +108,12 @@ def updateRingLeave(action, listOfNodes):
         logging.debug('NOK: Remove node {}:{}'.format(action['addr'],action['port']))
         return False
     
-    # identifico il nodo da rimuovere
+    # identifico il nodo da rimuovere con tutte le sue informazioni 
     nodeToRemove = dictOfNodes[action['id']]
 
     logging.debug('Removing node {}:{}'.format(nodeToRemove['addr'], nodeToRemove['port']))
-    # controllo prima se il nodo da rimuovere ha una corrispondeza compelta in termini non solo di id ma anche di porto e indirizzo ip
+
+    # controllo prima se il nodo da rimuovere ha una corrispondeza completa in termini non solo di id ma anche di porta e indirizzo IP
     if action['addr'] == nodeToRemove['addr'] and action['port'] == nodeToRemove['port']:
         logging.debug('OK:  Remove node {}:{}'.format(action['addr'],action['port']))
         listOfNodes.remove(nodeToRemove) # una volta verificato, lo posso togliere definitivamente dalla struttura 
@@ -122,7 +125,7 @@ def updateRingLeave(action, listOfNodes):
     return True
 
 def updateRing(action, listOfNodes, oracleSocket):
-    logging.info('RING UPDATE: {}'.format(action))
+    logging.info('RING UPDATE: {}'.format(action)) # loggo l'azione che sto facendo e le infromazioni del nodo che lo fa  
     
     try:
         result = {
@@ -141,7 +144,8 @@ def updateRing(action, listOfNodes, oracleSocket):
 def sendConfigurationToAll(listOfNodes, oracleSocket):
     N = len(listOfNodes) # lista dei nodi aggiornati, ora è il momento di aggiornare anche la struttura fisica   
 
-    for idx, node in enumerate(listOfNodes):# per ogni nodo nella lista di nodi
+    for idx, node in enumerate(listOfNodes):# per ogni nodo nella lista di nodi, idx è indice e node sono tutte le informazioni
+        # ORA CREO UN MESSAGGIO CHE CONTIENE UNA NUOVA CONFIGURAZIONE PER IL NODO
         if idx == N-1: # se l'indice è uguale alla lunghezza della lista di nodi -1
             nextNode = listOfNodes[0] # il prossimo nodo è il primo della lista nel caso in cui stiamo all'ultimo nodo
         else: # altrimenti il prossimo nodo è il successivo nella lista
@@ -160,7 +164,8 @@ def sendConfigurationToAll(listOfNodes, oracleSocket):
         oracleSocket.sendto(message.encode(), (addr, port)) # invio il messaggio di configurazione al nodo
 
 if __name__ == '__main__':
-
+    
+    # oracolo ha un suo indirizzo IP e porta associata, perche i nodi devono sapere dove mandare i messaggi di join e leave
     IP     = argv[1]
     PORT   = int(argv[2])
     bufferSize  = 1024
@@ -176,15 +181,16 @@ if __name__ == '__main__':
     
     # ciclo infinito per ricevere i messaggi dai nodi
     while True:
-        # riceve richiesta
+        # riceve richiesta da un nodo 
         mess, addr = oracleSocket.recvfrom(bufferSize)
-        dmess = mess.decode('utf-8')
+        dmess = mess.decode('utf-8') 
 
         logging.info('REQUEST FROM {}'.format(addr))
         logging.info('REQUEST: {}'.format(dmess))
         
-        # decodifica richiesta
+        # decodifica richiesta trasformandola in comando da eseguire, "action"
         action = decodeMessage(addr, dmess)
+
         # aggiorna la configurazione dell'anello
         updateRing(action, listOfNodes, oracleSocket)
 
