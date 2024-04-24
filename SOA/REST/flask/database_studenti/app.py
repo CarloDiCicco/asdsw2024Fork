@@ -23,7 +23,7 @@ students = [
 @app.route('/', methods=['GET'])
 def home():
     return '''<h1>Database Studenti</h1>
-    <p>Per accedere all'enenco studenti indicare il percorso /api/v1/resources/students/all'''
+    <p>Per accedere all'elenco studenti indicare il percorso /api/v1/resources/students/all'''
 
 @app.route('/api/v1/resources/students/all', methods=['GET'])
 def api_all():
@@ -31,7 +31,9 @@ def api_all():
 
 @app.route('/api/v1/resources/students', methods=['GET', 'POST'])
 def app_id():
-
+    # le informazioni da scambiare sono gestite via http e non url
+    # se il metodo è GET e non è presente l'id restituisco un errore 
+    # altrimenti restituisco l'elemento con l'id indicato
     if request.method == 'GET':
         if 'id' in request.args:
             id_ = int(request.args['id'])
@@ -45,7 +47,7 @@ def app_id():
                 results.append(student)
 
         return jsonify(results)
-    
+    # se il metodo è POST aggiungo un nuovo studente
     else:
         student = {}
        
