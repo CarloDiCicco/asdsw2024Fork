@@ -23,9 +23,9 @@ def init_db():
 
 def add_to_cache(key, value):
     global cache
-    if len(cache) >= MAX_CACHE_SIZE:
+    if len(cache) >= MAX_CACHE_SIZE: # If the cache is full
         # Evict the oldest item (FIFO for simplicity)
-        cache.pop(next(iter(cache)))
+        cache.pop(next(iter(cache))) # Remove the first item in the dictionary
     cache[key] = value
 
 @app.route('/urls', methods=['POST'])
@@ -35,9 +35,10 @@ def create_url():
 
     # Check cache first to avoid unnecessary DB access
     for key, value in cache.items():
-        if value == original_url:
-            return jsonify({"id": key, "original_url": value}), 200
-
+        if value == original_url: # If the URL already exists in the cache
+            return jsonify({"id": key, "original_url": value}), 200 # Return the URL from the cache
+    
+    # Now we will reasearch in the database
     conn = get_db_connection()
     cursor = conn.cursor()
 

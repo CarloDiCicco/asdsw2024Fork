@@ -3,9 +3,9 @@ import uuid
 
 app = Flask(__name__)
 
-@app.route('/generate/uuid', methods=['GET'])
+@app.route('/generate/uuid', methods=['GET']) # here we define the route
 def generate_uuid():
-    id = uuid.uuid4().hex
+    id = uuid.uuid4().hex # Generate a random UUID 
     return jsonify({'uuid': id})
 
 if __name__ == '__main__':

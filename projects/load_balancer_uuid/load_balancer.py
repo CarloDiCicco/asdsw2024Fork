@@ -12,6 +12,7 @@ servers = [
 
 current_server = 0
 
+# Function to get the next server
 def get_server():
     global current_server
     server = servers[current_server]
@@ -20,13 +21,13 @@ def get_server():
 
 @app.route('/generate/uuid', methods=['GET'])
 def generate_uuid():
-    server_url = get_server()
+    server_url = get_server() # Get the next server url 
     try:
         response = requests.get(server_url)
-        if response.status_code == 200:
-            result = response.json()
-            result['server'] = server_url
-            return jsonify(result), 200
+        if response.status_code == 200: # Check if the request was successful
+            result = response.json() # Get the JSON data from the response
+            result['server'] = server_url 
+            return jsonify(result), 200 # Return the JSON data with the server URL
         else:
             return jsonify({'error': 'Failed to generate UUID', 'server': server_url}), 500
     except requests.exceptions.RequestException:
