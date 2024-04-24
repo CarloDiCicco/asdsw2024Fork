@@ -29,7 +29,7 @@ def home():
 def api_all():
     return jsonify(students)
 
-@app.route('/api/v1/resources/students', methods=['GET', 'POST'])
+@app.route('/api/v1/resources/students', methods=['GET', 'POST', 'DELETE'])
 def app_id():
     # le informazioni da scambiare sono gestite via http e non url
     # se il metodo è GET e non è presente l'id restituisco un errore 
@@ -47,7 +47,7 @@ def app_id():
                 results.append(student)
 
         return jsonify(results)
-    # se il metodo è POST aggiungo un nuovo studente
+    
     else:
         student = {}
        
@@ -60,5 +60,20 @@ def app_id():
         students.append(student)
 
         return jsonify(student)
+    
+    else:
+        
+        if 'id' in request.args:
+            id_ = int(request.args['id'])
+        else:
+            return '''<h2>ERROR: indicare un id</h2>'''
+
+        for student in students:
+            if student['id'] == id_:
+                to_delete = student
+
+        students.remove(to_delete)
+
+        return jsonify(students)
 
 app.run()

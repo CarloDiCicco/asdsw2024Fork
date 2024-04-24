@@ -11,3 +11,7 @@ def hello():
 @app.route('/ita')
 def hello_ita():
     return 'Ciao a tutti!\n'
+
+@app.route('/deu')
+def hello_deu():
+    return 'Hallo Welt\n'
