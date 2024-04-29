@@ -7,7 +7,8 @@ app = Flask(__name__)
 servers = [
     "http://localhost:5001/generate/uuid",
     "http://localhost:5002/generate/uuid",
-    "http://localhost:5003/generate/uuid"
+    "http://localhost:5003/generate/uuid",
+    "http://localhost:5004/generate/uuid"
 ]
 
 current_server = 0
