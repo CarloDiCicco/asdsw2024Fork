@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 import requests
 
+# questo file rappresenta il server, con cui il client comunica, questo server poi deve interfacciarsi con i database
+
 app = Flask(__name__)
 
 # List of backend servers
